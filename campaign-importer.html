@@ -1,0 +1,533 @@
+<title>Meta to TikTok Campaign Importer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* REFERENCE UI — Campaign Importer, step-by-step wizard. Sample data, no API calls. Light only by design.
+   Direction: Minimalism & Swiss (ui-ux-pro-max), colours from the user's reference: bright blue + fresh green on cool grey.
+   Layout: left phase stepper + one focused step card; navy for actions, deep sky blue for state. */
+:root{
+  color-scheme:light;
+  --bg:#f3f5f9; --panel:#ffffff; --ink:#313a46; --ink-2:#495057; --muted:#74788d; --line:#e9ebf0; --soft:#f6f7fa;
+  --primary:#1c84ee; --primary-hover:#1670cf; --on-primary:#ffffff; --accent:#1c84ee; --accent-tint:#e8f2fd;
+  --green:#2ab57d; --green-tint:#e3f6ee;
+  --ok:#1f8a5f; --ok-bg:#e3f6ee; --warn:#a86a07; --warn-bg:#fff4dc; --bad:#d63b37; --bad-bg:#ffeceb; --drop:#74788d; --drop-bg:#f1f2f5;
+  --img1:#d6e7fb; --img2:#fbe3d6; --img3:#d4f0e4; --img4:#e7defa;
+  --f-body:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --f-mono:var(--f-body);
+  --r:8px; --shadow:0 2px 6px rgba(49,58,70,.05);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.appbar{background:var(--primary);color:#fff}
+.appbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px;flex-wrap:wrap}
+.appbar .name{font-weight:700;font-size:17px;letter-spacing:.01em;display:flex;align-items:center;gap:10px}
+.appbar .dot{width:12px;height:12px;border-radius:3px;background:var(--green);transform:rotate(45deg)}
+.appbar .sub{font-size:13px;opacity:.85}
+.appbar .chip{color:#fff;border-color:rgba(255,255,255,.45);background:transparent;margin:0}
+.page{padding-block:24px 48px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.25;letter-spacing:-.01em}
+h1{font-size:15px;font-weight:600} h2{font-size:24px;font-weight:700} h3{font-size:15px;font-weight:600}
+p{margin:0;color:var(--ink-2);max-width:68ch}
+.mono{font-family:var(--f-body);font-size:13px;font-variant-numeric:tabular-nums}
+.lbl{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button,select,input[type=text],input[type=number],input[type=date],textarea{font:inherit;color:var(--ink)}
+button{cursor:pointer;min-height:44px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 18px;font-weight:600;transition:background .2s,border-color .2s,color .2s}
+button:hover{border-color:#d3d7e0;background:var(--soft)}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+button.primary:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+button:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+select,input[type=text],input[type=number],input[type=date],textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 11px;width:100%;min-width:0;min-height:40px}
+select:hover,input:hover,textarea:hover{border-color:#d3d7e0}
+select:disabled{background:var(--soft);color:var(--muted)}
+textarea{resize:vertical;min-height:60px}
+input[type=checkbox],input[type=radio]{-webkit-appearance:none;appearance:none;flex:none;width:18px;height:18px;margin:0;border:1.5px solid #c3c8d2;background:var(--panel);cursor:pointer;display:inline-grid;place-items:center;transition:background .15s,border-color .15s,box-shadow .15s;vertical-align:middle}
+input[type=checkbox]{border-radius:5px}
+input[type=radio]{border-radius:50%}
+input[type=checkbox]:hover,input[type=radio]:hover{border-color:var(--primary)}
+input[type=checkbox]:checked{background:var(--primary);border-color:var(--primary)}
+input[type=checkbox]:checked::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+input[type=radio]:checked{border-color:var(--primary);border-width:5px}
+input[type=checkbox]:focus-visible,input[type=radio]:focus-visible{outline:none;box-shadow:0 0 0 3px var(--accent-tint),0 0 0 4px var(--primary)}
+input[type=checkbox]:disabled,input[type=radio]:disabled{background:var(--soft);border-color:var(--line);cursor:not-allowed}
+.choice{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;background:var(--panel);transition:border-color .2s,background .2s}
+.choice:hover{border-color:#d3d7e0}
+.choice.on{border-color:var(--accent);background:var(--accent-tint)}
+.choice input{margin-top:3px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.ok{color:var(--ok);background:var(--ok-bg)} .warn{color:var(--warn);background:var(--warn-bg)}
+.bad{color:var(--bad);background:var(--bad-bg)} .drop{color:var(--drop);background:var(--drop-bg)} .edit{color:var(--accent);background:var(--accent-tint)}
+.note{border-left:3px solid var(--accent);background:var(--accent-tint);padding:10px 14px;border-radius:0 8px 8px 0;font-size:14px;color:var(--ink-2)}
+.note b{color:var(--ink)}
+.api{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);background:var(--soft);border-radius:6px;padding:3px 8px;display:inline-block;align-self:flex-start;overflow-wrap:anywhere}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.thumb{position:relative;aspect-ratio:1/1;max-width:100%;border:1px solid var(--line);border-radius:8px;display:flex;align-items:flex-end;padding:8px;cursor:pointer;overflow:hidden;transition:opacity .2s}
+.thumb.r45{aspect-ratio:4/5}
+.thumb::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.7),transparent 60%)}
+.thumb input{position:absolute;top:8px;left:8px;z-index:1;box-shadow:0 1px 3px rgba(49,58,70,.25)}
+.thumb .mono{position:relative;background:rgba(255,255,255,.85);padding:1px 6px;border-radius:4px;font-size:11px}
+.thumb.off{opacity:.35}
+.adblock{border:1px solid var(--line);border-radius:var(--r);padding:16px;background:var(--panel)}
+.log{list-style:none;margin:0;padding:0}
+.log li{padding:10px 0;border-bottom:1px solid var(--soft);display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}
+ul.plain{margin:0;padding-left:18px;color:var(--ink-2)}
+ul.plain li{margin:4px 0}
+/* shell */
+.shell{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;align-items:start}
+.brand{display:flex;flex-direction:column;gap:2px;margin-bottom:24px}
+.brand .sub{font-size:12.5px;color:var(--muted)}
+.chip{display:inline-block;font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin-top:8px;background:var(--panel)}
+.steps{position:sticky;top:max(24px,env(safe-area-inset-top,0px));background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 14px}
+.phase{margin-bottom:18px}
+.phase .lbl{display:block;margin-bottom:8px}
+.phase ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.phase li{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;font-size:14px;color:var(--muted)}
+.phase li .n{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:1.5px solid var(--line);background:var(--panel)}
+.phase li.done{color:var(--ink-2)} .phase li.done .n{background:var(--green);border-color:var(--green);color:#fff}
+.phase li.cur{color:var(--primary);font-weight:600;background:var(--accent-tint)} .phase li.cur .n{background:var(--primary);border-color:var(--primary);color:#fff}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:28px 32px}
+.card-head{display:flex;flex-direction:column;gap:6px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--soft)}
+.card-head .meta{font-size:13px;color:var(--muted)}
+.wfoot{display:flex;justify-content:space-between;gap:10px;margin-top:28px;padding-top:20px;border-top:1px solid var(--soft)}
+.progress{display:none;height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:16px}
+.progress span{display:block;height:100%;background:var(--green)}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;display:inline-block;vertical-align:-3px;margin-right:8px;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:16px}
+  .steps{position:static;padding:12px 14px}.phase{display:none}.progress{display:block}
+  .card{padding:20px 18px}
+  h2{font-size:20px}
+}
+/* step 8: side-by-side comparison */
+.cmp-legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--muted);margin-bottom:12px}
+.cmp-wrap{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+table.cmp{width:100%;border-collapse:collapse;table-layout:fixed}
+table.cmp td,table.cmp th{border-bottom:1px solid var(--soft);padding:12px 14px;vertical-align:middle;font-size:14px;text-align:left}
+table.cmp th:nth-child(2),table.cmp td.cmp-mk{width:48px;padding:0;text-align:center}
+.cmp-th{background:var(--accent-tint);font-weight:700;font-size:15px;color:var(--ink)}
+.cmp-th > span{display:inline-flex;flex-direction:column}
+.cmp-head td{background:var(--panel);font-size:14px;padding-top:18px;border-bottom:1px solid var(--line)}
+.cmp-head .lbl{margin-right:8px}
+.cmp-l{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cmp-m .cmp-l,.cmp-t .cmp-l{display:block;margin-bottom:2px}
+.cmp-l-tt{display:none!important}
+.cmp-v,.cmp-t{overflow-wrap:anywhere}
+.cmp-row.dropped .cmp-v{text-decoration:line-through;color:var(--muted)}
+.cmp-row.dropped .cmp-t{color:var(--muted)}
+.mk{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font-size:13px;color:var(--muted);background:var(--soft)}
+.mk.ch{color:var(--warn);background:var(--warn-bg)} .mk.dr{color:var(--drop);background:var(--drop-bg)} .mk.in{color:var(--accent);background:var(--accent-tint)}
+.cmp-legend .mk{width:18px;height:18px;font-size:11px;vertical-align:middle;margin-right:4px}
+.mini{display:inline-flex;gap:3px;vertical-align:middle;margin-left:6px}
+.mini span{width:18px;height:18px;border-radius:4px;border:1px solid var(--line)}
+.url{font-size:11.5px}
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sched{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.sched label{display:flex;flex-direction:column;gap:3px}
+.sched input[type=date]{width:auto}
+.sched input[type=date]:disabled{opacity:.45}
+.ms{position:relative}
+.ms > summary{list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:8px 30px 8px 11px;background:var(--panel);position:relative;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:40px}
+.ms > summary::after{content:"▾";position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.ms > summary::-webkit-details-marker{display:none}
+.ms[open] > summary{border-color:var(--accent)}
+.ms-list{margin-top:4px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px;display:flex;flex-direction:column;gap:2px;max-height:220px;overflow:auto;box-shadow:0 8px 24px rgba(15,23,42,.08)}
+.ms-list label{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:6px;cursor:pointer}
+.ms-list label:hover{background:var(--soft)}
+@media (max-width:640px){
+  table.cmp,table.cmp thead,table.cmp tbody,table.cmp tr,table.cmp td,table.cmp th{display:block;width:auto!important}
+  table.cmp thead th:nth-child(2),table.cmp td.cmp-mk{display:none}
+  table.cmp thead tr{display:flex;flex-direction:column}
+  .cmp-row td{border:0;padding:6px 14px}.cmp-row{border-bottom:1px solid var(--soft);padding-block:6px}
+  .cmp-l-tt{display:block!important;color:var(--accent)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div id="app"></div>
+
+<script>
+/* ---------- STUB DATA (no real API calls) ---------- */
+const META_ACCOUNTS=[
+  {id:"act_1029384756",name:"Nomad Coffee — MENA",currency:"AED"},
+  {id:"act_5566778899",name:"Dune Outdoor — GCC",currency:"USD"}];
+const META_CAMPAIGNS={
+  act_1029384756:[
+    {id:"120210000000001",name:"NC | Traffic | Winter Menu | Oct26",objective:"OUTCOME_TRAFFIC",status:"ACTIVE"},
+    {id:"120210000000002",name:"NC | Traffic | Loyalty App LP | Sep26",objective:"OUTCOME_TRAFFIC",status:"PAUSED"},
+    {id:"120210000000003",name:"NC | Sales | Beans Subscription",objective:"OUTCOME_SALES",status:"ACTIVE"},
+    {id:"120210000000004",name:"NC | Awareness | Ramadan",objective:"OUTCOME_AWARENESS",status:"PAUSED"}],
+  act_5566778899:[{id:"120219990000001",name:"DO | Traffic | Camping Guide",objective:"OUTCOME_TRAFFIC",status:"ACTIVE"}]};
+const CAMPAIGN_DETAIL={ /* what the extract step returns for the selected campaign */
+  budgetLevel:"CAMPAIGN", budgetType:"DAILY", budget:500, currency:"AED", start:"2026-10-01", end:null,
+  adsets:[
+    {id:"238500000001",name:"UAE | 25–44 | EN+AR",geo:"United Arab Emirates",age:[25,44],gender:"All",langs:["English","Arabic"],opt:"LINK_CLICKS",interests:["Coffee","Cafés"],audiences:[]},
+    {id:"238500000002",name:"KSA Riyadh | 18–34 | F",geo:"Riyadh, Saudi Arabia",age:[18,34],gender:"Female",langs:["Arabic"],opt:"LINK_CLICKS",interests:[],audiences:["Website visitors 30d"]},
+    {id:"238500000003",name:"Kuwait | 21–55 | Broad",geo:"Kuwait",age:[21,55],gender:"All",langs:["Arabic","English"],opt:"LANDING_PAGE_VIEWS",interests:[],audiences:[]}],
+  ads:[
+    {id:"120215550001",adset:"238500000001",name:"Winter menu — carousel",text:"New winter menu is here. Spiced date latte, saffron cortado and more. Try it this week at any Nomad branch.",headline:"Winter Menu 2026",cta:"LEARN_MORE",
+      url:"https://nomadcoffee.example/winter?utm_source=facebook&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_content={{ad.name}}",
+      images:[{id:"a1",w:1080,h:1080,c:1},{id:"a2",w:1080,h:1080,c:2},{id:"a3",w:1080,h:1080,c:3}]},
+    {id:"120215550002",adset:"238500000002",name:"Saffron cortado — single image",text:"Saffron cortado. Riyadh's new favourite afternoon coffee.",headline:"Order ahead",cta:"ORDER_NOW",
+      url:"https://nomadcoffee.example/order?utm_source=facebook&utm_campaign={{campaign.id}}&src={{site_source_name}}",
+      images:[{id:"b1",w:1080,h:1350,c:4}]},
+    {id:"120215550003",adset:"238500000003",name:"Store finder — 2 images",text:"Find your nearest Nomad in Kuwait City.",headline:"Store finder",cta:"LEARN_MORE",
+      url:"https://nomadcoffee.example/stores?utm_source=facebook&utm_medium=paid_social&utm_campaign={{campaign.name}}",
+      images:[{id:"c1",w:1080,h:1080,c:2},{id:"c2",w:1080,h:1080,c:1}]}]};
+const TT_ADVERTISERS=[
+  {id:"7412890011223344556",name:"Nomad Coffee — UAE/KSA/KW",currency:"AED",minCampaignDaily:185,minAdgroupDaily:75},
+  {id:"7412890099887766554",name:"Nomad Coffee — Test",currency:"USD",minCampaignDaily:50,minAdgroupDaily:20}];
+const TT_IDENTITIES={ /* /identity/get/ filtered to BC_AUTH_TT */
+  "7412890011223344556":[{id:"6971100000000001",handle:"@nomadcoffee.ae",bc:"7300000000000001"},{id:"6971100000000002",handle:"@nomadcoffee.ksa",bc:"7300000000000001"}],
+  "7412890099887766554":[{id:"6971100000000009",handle:"@nomad.sandbox",bc:"7300000000000002"}]};
+const TT_LOCATIONS={"United Arab Emirates":"290557","Riyadh, Saudi Arabia":"108410","Kuwait":"285570"}; /* sample IDs — resolved via TikTok location search */
+const TT_LOC_OPTIONS=[["290557","United Arab Emirates"],["102358","Saudi Arabia"],["108410","Riyadh, Saudi Arabia"],["105343","Jeddah, Saudi Arabia"],["285570","Kuwait"],["289688","Qatar"],["290291","Bahrain"],["286963","Oman"],["357994","Egypt"]];
+const TT_LANG_OPTIONS=[["en","English"],["ar","Arabic"],["fr","French"],["hi","Hindi"],["ur","Urdu"]];
+const OPT_OPTIONS=[["CLICK","Clicks"],["TRAFFIC_LANDING_PAGE_VIEW","Landing page views (needs pixel, not in V1)"]];
+const TT_INTERESTS=[ /* sample of GET /tool/interest_category/ — real list is a category tree with IDs */
+  ["10010","Food & Beverage"],["10011","Food & Beverage › Coffee & Tea"],["10012","Food & Beverage › Restaurants & Cafés"],["10013","Food & Beverage › Cooking"],
+  ["10020","Lifestyle"],["10030","Travel"],["10040","Sports & Outdoors"],["10050","Beauty & Personal Care"],["10060","Shopping"]];
+const INTEREST_SUGGEST={"Coffee":"10011","Cafés":"10012"}; /* name-match suggestion, user confirms */
+const today=()=>{const d=new Date();return d.toISOString().slice(0,10)};
+const TT_LANGS={English:"en",Arabic:"ar"};
+const AGE_BUCKETS=[["AGE_18_24",18,24],["AGE_25_34",25,34],["AGE_35_44",35,44],["AGE_45_54",45,54],["AGE_55_100",55,100]];
+const CTA_MAP={LEARN_MORE:"LEARN_MORE",ORDER_NOW:"ORDER_NOW",SHOP_NOW:"SHOP_NOW",SIGN_UP:"SIGN_UP"};
+const TT_CTAS=["LEARN_MORE","ORDER_NOW","SHOP_NOW","SIGN_UP","CONTACT_US","BOOK_NOW","VIEW_NOW"];
+const MACROS={"{{campaign.name}}":"__CAMPAIGN_NAME__","{{campaign.id}}":"__CAMPAIGN_ID__","{{adset.name}}":"__AID_NAME__","{{adset.id}}":"__AID__","{{ad.name}}":"__CID_NAME__","{{ad.id}}":"__CID__","{{placement}}":"__PLACEMENT__"};
+const CAPTION_MAX=100; /* creatives[].ad_text: max 100 characters, no emoji (/ad/create/) */
+const TT_MUSIC=[ /* GET /file/music/get/ — commercial music library (sample) */
+  {id:"7034800000000001",name:"Morning Brew — lo-fi",dur:"0:30"},
+  {id:"7034800000000002",name:"Desert Drive — upbeat",dur:"0:30"},
+  {id:"7034800000000003",name:"Soft Steam — acoustic",dur:"0:25"}];
+
+/* ---------- STATE ---------- */
+let S;
+function fresh(){
+  return {step:0, importing:false, metaConnected:false, metaAccount:null, campaign:null,
+    ttConnected:false, advertiser:null, identity:null, music:null,
+    cfg:null, outcome:"success", created:false};
+}
+function initCfg(){
+  const d=CAMPAIGN_DETAIL, camp=META_CAMPAIGNS[S.metaAccount].find(c=>c.id===S.campaign);
+  S.cfg={
+    name:camp.name.replace("| Oct26","| TT import"),
+    budget:"", budgetType:d.budgetType, start:today(), end:"", noEnd:true,
+    adgroups:d.adsets.map(a=>({id:a.id,on:false,name:a.name,
+      locs:TT_LOCATIONS[a.geo]?[TT_LOCATIONS[a.geo]]:[], ages:widen(a.age), gender:a.gender==="All"?"GENDER_UNLIMITED":a.gender==="Female"?"GENDER_FEMALE":"GENDER_MALE",
+      langs:a.langs.map(l=>TT_LANGS[l]), opt:"CLICK", ttInterests:a.interests.map(n=>INTEREST_SUGGEST[n]).filter(Boolean), srcOpt:a.opt, interests:a.interests, audiences:a.audiences, geo:a.geo, srcAge:a.age, srcGender:a.gender, srcLangs:a.langs})),
+    ads:d.ads.map(ad=>({id:ad.id,on:false,adset:ad.adset,name:ad.name,cta0:ad.cta,caption:ad.text.slice(0,CAPTION_MAX),srcText:ad.text,headline:ad.headline,
+      cta:CTA_MAP[ad.cta]||"LEARN_MORE",srcCta:ad.cta,url:rewrite(ad.url),srcUrl:ad.url,
+      images:ad.images.map(i=>({...i,on:true}))}))
+  };
+}
+function widen([lo,hi]){return AGE_BUCKETS.filter(([,a,b])=>b>=lo&&a<=hi).map(b=>b[0])}
+function rewrite(u){
+  let out=u.replace("utm_source=facebook","utm_source=tiktok");
+  for(const[k,v] of Object.entries(MACROS)) out=out.split(k).join(v);
+  return out;
+}
+function unknownMacros(u){return (u.match(/\{\{[^}]+\}\}/g)||[])}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const adv=()=>TT_ADVERTISERS.find(a=>a.id===S.advertiser);
+const metaAcc=()=>META_ACCOUNTS.find(a=>a.id===S.metaAccount);
+const ident=()=>(TT_IDENTITIES[S.advertiser]||[]).find(i=>i.id===S.identity);
+
+/* ---------- VALIDATION ---------- */
+function issues(){
+  const block=[], warn=[];
+  if(!S.metaConnected) block.push("Connect Meta.");
+  if(!S.campaign) block.push("Choose a Meta Traffic campaign.");
+  if(!S.ttConnected||!S.advertiser) block.push("Choose the TikTok ad account to import into.");
+  if(S.advertiser&&!S.identity) block.push("Pick the TikTok account identity (BC_AUTH_TT) the ads run under.");
+  if(S.advertiser&&!S.music) block.push("Pick the music for the carousel ads.");
+  if(S.cfg){
+    const a=adv(), b=Number(S.cfg.budget);
+    if(!S.cfg.budget) block.push("Enter a campaign budget.");
+    if(!S.cfg.start) block.push("Pick a start date.");
+    if(!S.cfg.noEnd&&S.cfg.end&&S.cfg.end<=S.cfg.start) block.push("End date must be after the start date.");
+    else if(a&&b<a.minCampaignDaily) block.push(`Budget ${b} ${a.currency} is below the minimum of ${a.minCampaignDaily} ${a.currency}.`);
+    const ags=S.cfg.adgroups.filter(g=>g.on);
+    if(!ags.length) block.push("Select at least one ad set and ad to import.");
+    ags.forEach(g=>{ if(!S.cfg.ads.some(ad=>ad.adset===g.id&&ad.on)) block.push(`${g.name}: no ads selected. Select an ad or leave the ad set out.`); });
+    if(ags.length>30) block.push("More than 30 ad groups selected.");
+    ags.forEach(g=>{
+      if(!g.locs.length) block.push(`${g.name}: pick at least one TikTok location.`);
+      if(!g.ages.length) block.push(`${g.name}: pick at least one age range.`);
+      if(g.interests.length) warn.push(`${g.name}: interests (${g.interests.join(", ")}) matched to TikTok categories by name. Review them.`);
+      if(g.audiences.length) warn.push(`${g.name}: custom audience "${g.audiences.join(", ")}" dropped.`);
+      if(g.srcOpt==="LANDING_PAGE_VIEWS") warn.push(`${g.name}: Meta optimized for landing page views; TikTok will optimize for clicks (no pixel in V1).`);
+      const [lo,hi]=g.srcAge, wl=AGE_BUCKETS.find(x=>x[0]===g.ages[0]), wh=AGE_BUCKETS.find(x=>x[0]===g.ages[g.ages.length-1]);
+      if(wl&&wh&&(wl[1]!==lo||Math.min(wh[2],65)!==Math.min(hi,65))) warn.push(`${g.name}: age ${lo}–${hi} widened to ${wl[1]}–${wh[2]===100?"55+":wh[2]}.`);
+    });
+    const ads=S.cfg.ads.filter(ad=>adOn(ad));
+    if(!ads.some(ad=>ad.images.some(i=>i.on))) block.push("Select at least one image to migrate.");
+    ads.forEach(ad=>{
+      if(ad.headline) warn.push(`${ad.name}: headline "${ad.headline}" dropped (no carousel equivalent).`);
+      if(ad.srcText.length>CAPTION_MAX) warn.push(`${ad.name}: primary text truncated to ${CAPTION_MAX} characters for ad text.`);
+      if(ad.images.filter(i=>i.on).length===1) warn.push(`${ad.name}: single image runs as a 1-image carousel.`);
+      unknownMacros(ad.url).forEach(m=>warn.push(`${ad.name}: URL macro ${m} has no TikTok equivalent. Edit or remove it.`));
+    });
+    warn.push("Meta placements ignored. Ads run on TikTok placement only.");
+  }
+  return {block,warn};
+}
+function adOn(ad){return ad.on&&S.cfg.adgroups.find(g=>g.id===ad.adset)?.on}
+function idHandle(){return ident()?.handle||"the selected identity"}
+function counts(){
+  if(!S.cfg) return {ag:0,ads:0,imgs:0};
+  const ads=S.cfg.ads.filter(ad=>adOn(ad)&&ad.images.some(i=>i.on));
+  return {ag:S.cfg.adgroups.filter(g=>g.on).length, ads:ads.length, imgs:ads.reduce((n,a)=>n+a.images.filter(i=>i.on).length,0)};
+}
+
+/* ---------- SHARED SECTION CONTENT ---------- */
+const STEPS=["Connect Facebook","Ad account","Campaign","Ad sets & ads","Connect TikTok","Ad account","Identity","Compare & edit","Images & music","Review","Done"];
+
+function secConnectMeta(){
+  return `<div class="stack">
+    <p>Sign in with Facebook to read your ad accounts and campaigns. Read-only access.</p>
+    <div class="row">${S.metaConnected?`<span class="pill ok">● Connected as Sara K.</span><button data-act="disconnectMeta">Disconnect</button>`
+      :`<button class="primary" data-act="connectMeta">Continue with Facebook</button>`}</div>
+    <span class="api">Facebook Login · scope ads_read</span></div>`;
+}
+function secMetaAccount(){
+  if(!S.metaConnected) return `<p class="muted">Connect Meta first.</p>`;
+  return `<div class="stack">${META_ACCOUNTS.map(a=>`<label class="choice ${S.metaAccount===a.id?"on":""}"><input type="radio" name="ma" data-act="metaAccount" value="${a.id}" ${S.metaAccount===a.id?"checked":""}>
+     <div><b>${esc(a.name)}</b><div class="mono muted">${a.id} · ${a.currency}</div></div></label>`).join("")}
+    <span class="api">GET /me/adaccounts?fields=name,currency,account_status</span></div>`;
+}
+function secCampaign(){
+  if(!S.metaAccount) return `<p class="muted">Choose a Meta ad account first.</p>`;
+  const all=META_CAMPAIGNS[S.metaAccount], tr=all.filter(c=>c.objective==="OUTCOME_TRAFFIC");
+  return `<div class="stack">${tr.map(c=>`<label class="choice ${S.campaign===c.id?"on":""}"><input type="radio" name="mc" data-act="campaign" value="${c.id}" ${S.campaign===c.id?"checked":""}>
+     <div><b>${esc(c.name)}</b><div class="mono muted">${c.id} · ${c.objective} · ${c.status}</div></div></label>`).join("")}
+    ${all.length>tr.length?`<p class="muted">${all.length-tr.length} campaigns with other objectives are hidden. V1 imports Traffic only.</p>`:""}
+    <span class="api">GET /act_{id}/campaigns · filter objective IN [OUTCOME_TRAFFIC]</span>
+    ${S.campaign?`<div class="note"><b>Extracted</b> 3 ad sets, 3 ads, 6 images, targeting, budget and dates.</div>`:""}</div>`;
+}
+function secSelect(){
+  if(!S.cfg) return `<p class="muted">Choose a Meta campaign first.</p>`;
+  const d=CAMPAIGN_DETAIL, nAg=S.cfg.adgroups.filter(g=>g.on).length, nAd=S.cfg.ads.filter(a=>a.on).length;
+  return `<div class="stack">
+    <p>Choose what to bring over. Nothing is selected by default. Selecting an ad set selects all its ads; you can then untick individual ads.</p>
+    <div class="row" style="justify-content:space-between"><span class="mono">${nAg} of ${S.cfg.adgroups.length} ad sets · ${nAd} of ${S.cfg.ads.length} ads selected</span>
+      <span class="row"><button data-act="selAll">Select all</button><button data-act="selNone">Clear</button></span></div>
+    ${S.cfg.adgroups.map((g,ix)=>{const src=d.adsets[ix], ads=S.cfg.ads.filter(a=>a.adset===g.id);
+      return `<div class="adblock stack">
+        <label class="row" style="gap:10px;align-items:flex-start"><input type="checkbox" id="sel-ag-${ix}" data-act="selAg" data-i="${ix}" ${g.on?"checked":""} style="margin-top:4px">
+          <div style="min-width:0"><b>${esc(g.name)}</b><div class="mono muted">Ad set ${g.id} · ${esc(src.geo)} · ${src.age[0]}–${src.age[1]} · ${src.gender} · ${src.opt}</div></div></label>
+        <div class="stack" style="padding-left:28px;gap:8px">${ads.map(ad=>`<label class="row" style="gap:10px;align-items:flex-start"><input type="checkbox" id="sel-ad-${ad.id}" data-act="selAd" data-ad="${ad.id}" ${ad.on?"checked":""} style="margin-top:4px">
+          <div style="min-width:0"><span>${esc(ad.name)}</span><div class="mono muted">Ad ${ad.id} · ${ad.images.length} image${ad.images.length>1?"s":""} · ${ad.cta0}</div></div></label>`).join("")}</div>
+      </div>`}).join("")}
+    <span class="api">GET /{campaign_id}/adsets · GET /{campaign_id}/ads (with creative)</span></div>`;
+}
+function secConnectTT(){
+  return `<div class="stack"><p>Sign in to TikTok for Business to choose where the campaign is created.</p>
+    <div class="row">${S.ttConnected?`<span class="pill ok">● TikTok for Business connected</span><button data-act="disconnectTT">Disconnect</button>`
+      :`<button class="primary" data-act="connectTT">Continue with TikTok for Business</button>`}</div>
+    <span class="api">TikTok Marketing API OAuth · POST /oauth2/access_token/</span></div>`;
+}
+function secAdvertiser(){
+  if(!S.ttConnected) return `<p class="muted">Connect TikTok for Business first.</p>`;
+  return `<div class="stack">${TT_ADVERTISERS.map(a=>`<label class="choice ${S.advertiser===a.id?"on":""}"><input type="radio" name="ta" data-act="advertiser" value="${a.id}" ${S.advertiser===a.id?"checked":""}>
+     <div><b>${esc(a.name)}</b><div class="mono muted">${a.id} · ${a.currency}</div></div></label>`).join("")}
+    <span class="api">GET /oauth2/advertiser/get/</span></div>`;
+}
+function secTTAccount(){
+  if(!S.advertiser) return `<p class="muted">Choose a TikTok ad account first.</p>`;
+  const ids=TT_IDENTITIES[S.advertiser]||[];
+  return `<div class="stack">
+    <p>Ads run as Spark ads (push) under a TikTok account linked to this ad account through Business Center. Images are uploaded straight to the ad account, so nothing is posted to the profile.</p>
+    <div class="field"><span class="lbl">Identity (BC_AUTH_TT)</span>
+      <select data-act="identity" id="identity-sel"><option value="">Select identity…</option>
+      ${ids.map(i=>`<option value="${i.id}" ${S.identity===i.id?"selected":""}>${i.handle} · BC ${i.bc}</option>`).join("")}</select>
+      <span class="api">GET /identity/get/ · identity_type=BC_AUTH_TT + identity_authorized_bc_id</span></div>
+  </div>`;
+}
+function secImages(){
+  if(!S.cfg) return `<p class="muted">Pick a campaign first.</p>`;
+  return `<div class="stack"><p>Each Meta ad becomes one TikTok carousel ad with the images you keep selected. A single image becomes a 1-image carousel.</p>
+    <div style="max-width:420px"><div class="field"><span class="lbl">Music for all carousel ads</span>
+    <select data-act="music" id="music-sel"><option value="">Select track…</option>
+    ${TT_MUSIC.map(m=>`<option value="${m.id}" ${S.music===m.id?"selected":""}>${m.name} · ${m.dur}</option>`).join("")}</select>
+    <span class="api">GET /file/music/get/ · music_scene=CAROUSEL_ADS</span></div></div>
+    ${S.cfg.ads.filter(adOn).map(ad=>`<div class="adblock stack"><div class="row" style="justify-content:space-between"><b>${esc(ad.name)}</b><span class="mono muted">→ 1 carousel ad</span></div>
+      <div class="imgs">${ad.images.map(i=>`<label class="thumb ${i.h>i.w?"r45":""} ${i.on?"":"off"}" style="background:var(--img${i.c})">
+        <input type="checkbox" data-act="img" data-ad="${ad.id}" data-img="${i.id}" ${i.on?"checked":""} aria-label="Migrate image ${i.id}"><span class="mono">${i.w}×${i.h}</span></label>`).join("")}</div></div>`).join("")}
+    <span class="api">GET /act_{id}/adimages → POST /file/image/ad/upload/</span></div>`;
+}
+function secReview(){
+  const {block,warn}=issues(), c=counts(), a=adv();
+  return `<div class="stack">
+    <div class="grid2">
+      <div><span class="lbl">Will be created (paused)</span><ul class="plain"><li>1 campaign · Traffic · ${esc(S.cfg?.name||"")}</li><li>${c.ag} ad groups</li><li>${c.ads} carousel Spark ads</li></ul></div>
+      <div><span class="lbl">Will be uploaded</span><ul class="plain"><li>${c.imgs} images to the ad account library</li><li>Identity: ${esc(idHandle())}</li><li>Music: ${esc(TT_MUSIC.find(m=>m.id===S.music)?.name||"—")}</li></ul></div>
+    </div>
+    <div class="note"><b>Ads only:</b> nothing is posted to ${esc(idHandle())}'s profile.</div>
+    ${block.length?`<div><span class="lbl">Fix before importing</span><ul class="plain">${block.map(b=>`<li><span class="pill bad">block</span> ${esc(b)}</li>`).join("")}</ul></div>`:`<span class="pill ok">✓ Ready to import</span>`}
+    ${warn.length?`<div><span class="lbl">Will change or be dropped</span><ul class="plain">${warn.map(w=>`<li><span class="pill warn">note</span> ${esc(w)}</li>`).join("")}</ul></div>`:""}
+    <div class="row"><button class="primary" data-act="confirm" ${block.length?"disabled":""}>Import to TikTok</button>
+      <label class="row mono muted">Simulate result <select data-act="outcome" id="outcome-sel" style="width:auto"><option value="success" ${S.outcome==="success"?"selected":""}>success</option><option value="partial" ${S.outcome==="partial"?"selected":""}>partial failure</option></select></label></div>
+  </div>`;
+}
+function secResult(){
+  if(!S.created) return `<p class="muted">Nothing imported yet.</p>`;
+  const p=S.outcome==="partial", c=counts();
+  const rows=[
+    ["ok","POST /campaign/create/","Campaign created, paused","1866000000000001"],
+    ["ok","POST /adgroup/create/",`${c.ag} ad groups created, paused`,"1866000000000101…"],
+    [p?"bad":"ok","POST /file/image/ad/upload/",p?`${c.imgs-1} of ${c.imgs} images uploaded. 1 image for "Store finder" failed: below minimum resolution (sample error)`:`${c.imgs} images uploaded`,""],
+    [p?"warn":"ok","POST /ad/create/",p?`${c.ads-1} carousel ads created, paused. "Store finder" created with 1 of 2 images`:`${c.ads} carousel ads created, paused`,""]];
+  return `<div class="stack">
+    <span class="pill ${p?"warn":"ok"}" style="font-size:13px;padding:5px 12px">${p?"Imported with 1 failure":"Imported. Everything is paused."}</span>
+    <ul class="log">${rows.map(r=>`<li><span class="pill ${r[0]}">${r[0]==="ok"?"✓":r[0]==="bad"?"✕":"!"}</span><span class="api">${r[1]}</span><span>${esc(r[2])}</span>${r[3]?`<span class="mono muted">${r[3]}</span>`:""}</li>`).join("")}</ul>
+    ${p?`<div class="note"><b>To fix:</b> open the "Store finder" ad in TikTok Ads Manager and add a replacement image. Nothing was rolled back.</div>`:`<div class="note"><b>Next:</b> review in TikTok Ads Manager and turn the campaign on.</div>`}
+    <div class="row"><button data-act="restart">Start another import</button></div></div>`;
+}
+
+const AGE_LABEL={AGE_18_24:"18–24",AGE_25_34:"25–34",AGE_35_44:"35–44",AGE_45_54:"45–54",AGE_55_100:"55+"};
+const GENDER_LABEL={GENDER_UNLIMITED:"All",GENDER_FEMALE:"Female",GENDER_MALE:"Male"};
+const LANG_LABEL={en:"English",ar:"Arabic"};
+function cmp(label,meta,tt,kind){ /* kind: same | changed | dropped | input */
+  const mark={same:`<span class="mk">→</span>`,changed:`<span class="mk ch" title="Changed">→</span>`,dropped:`<span class="mk dr" title="Not carried over">✕</span>`,input:`<span class="mk in" title="You set this">→</span>`}[kind];
+  return `<tr class="cmp-row ${kind}"><td class="cmp-m"><span class="cmp-l">${label}</span><span class="cmp-v">${meta}</span></td><td class="cmp-mk">${mark}</td>
+    <td class="cmp-t"><span class="cmp-l cmp-l-tt">${label}</span>${kind==="dropped"?`<span class="muted">Not carried over</span>`:tt}</td></tr>`;
+}
+function cmpBlock(kind,title,rows){
+  return `<tbody class="cmp-block"><tr class="cmp-head"><td colspan="3"><span class="lbl">${kind}</span> <b>${esc(title)}</b></td></tr>${rows.join("")}</tbody>`;
+}
+function minithumbs(imgs){return `<span class="mini">${imgs.map(i=>`<span style="background:var(--img${i.c})"></span>`).join("")}</span>`}
+function selectBox(id,act,data,opts,cur,disabledVals=[]){
+  return `<select id="${id}" data-act="${act}" ${data}>${opts.map(([v,l])=>`<option value="${v}" ${cur===v?"selected":""} ${disabledVals.includes(v)?"disabled":""}>${esc(l)}</option>`).join("")}</select>`;
+}
+function multiBox(id,i,k,opts,cur){ /* dropdown with checkboxes */
+  const lab=opts.filter(([v])=>cur.includes(v)).map(o=>o[1]);
+  return `<details class="ms" ${S.openMs===id?"open":""} data-ms="${id}"><summary data-act="ms" data-ms="${id}">${lab.length?esc(lab.join(", ")):`<span class="muted">Select…</span>`}</summary>
+    <div class="ms-list">${opts.map(([v,l])=>`<label><input type="checkbox" id="${id}-${v}" data-act="agMulti" data-ms="${id}" data-i="${i}" data-k="${k}" value="${v}" ${cur.includes(v)?"checked":""}> ${esc(l)}</label>`).join("")}</div></details>`;
+}
+const fixed=v=>`<select disabled><option>${esc(v)}</option></select>`;
+function cfgSideBySide(){
+  if(!S.cfg) return `<p class="muted">Pick a campaign first.</p>`;
+  const d=CAMPAIGN_DETAIL, a=adv(), camp=META_CAMPAIGNS[S.metaAccount].find(c=>c.id===S.campaign), C=S.cfg;
+  const blocks=[];
+  blocks.push(cmpBlock("Campaign",camp.name,[
+    cmp("Name",esc(camp.name),`<input type="text" id="s-name" data-act="cfg" data-k="name" value="${esc(C.name)}">`,C.name===camp.name?"same":"input"),
+    cmp("Objective","Traffic",fixed("Traffic"),"same"),
+    cmp("Budget",`${d.budget} ${d.currency} / day`,`<div class="row" style="flex-wrap:nowrap;gap:6px"><input type="number" id="s-budget" data-act="cfg" data-k="budget" min="0" placeholder="min ${a?a.minCampaignDaily:""}" value="${esc(C.budget)}"><span class="mono">${a?a.currency:""}/day</span></div>`,"input"),
+    cmp("Schedule",`${d.start} → no end`,`<div class="sched"><label><span class="cmp-l">Start</span><input type="date" id="s-start" data-act="cfg" data-k="start" value="${C.start}" min="${today()}"></label>
+      <label><span class="cmp-l">End</span><input type="date" id="s-end" data-act="cfg" data-k="end" value="${C.end}" ${C.noEnd?"disabled":""} min="${C.start}"></label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="s-noend" data-act="noEnd" ${C.noEnd?"checked":""}> No end date</label></div>`,"changed")]));
+  C.adgroups.forEach((g,ix)=>{ if(!g.on) return;
+    const ageSame=g.ages.length&&AGE_BUCKETS.find(x=>x[0]===g.ages[0])[1]===g.srcAge[0]&&AGE_BUCKETS.find(x=>x[0]===g.ages[g.ages.length-1])[2]===g.srcAge[1];
+    const rows=[
+      cmp("Location",esc(g.geo),multiBox(`ms-loc-${ix}`,ix,"locs",TT_LOC_OPTIONS,g.locs),g.locs.length?"same":"changed"),
+      cmp("Age",`${g.srcAge[0]}–${g.srcAge[1]}`,multiBox(`ms-age-${ix}`,ix,"ages",AGE_BUCKETS.map(b=>[b[0],AGE_LABEL[b[0]]]),g.ages),ageSame?"same":"changed"),
+      cmp("Gender",g.srcGender,selectBox(`s-gen-${ix}`,"ag",`data-i="${ix}" data-k="gender"`,Object.entries(GENDER_LABEL),g.gender),"same"),
+      cmp("Languages",g.srcLangs.join(", "),multiBox(`ms-lang-${ix}`,ix,"langs",TT_LANG_OPTIONS,g.langs),"same"),
+      cmp("Optimize for",g.srcOpt==="LINK_CLICKS"?"Link clicks":"Landing page views",selectBox(`s-opt-${ix}`,"ag",`data-i="${ix}" data-k="opt"`,OPT_OPTIONS,g.opt,["TRAFFIC_LANDING_PAGE_VIEW"]),g.srcOpt==="LINK_CLICKS"?"same":"changed"),
+      cmp("Placements","Advantage+ placements",fixed("TikTok only"),"changed")];
+    rows.splice(4,0,cmp("Interests",g.interests.length?esc(g.interests.join(", ")):`<span class="muted">None</span>`,multiBox(`ms-int-${ix}`,ix,"ttInterests",TT_INTERESTS,g.ttInterests),g.interests.length?"changed":"same"));
+    if(g.audiences.length) rows.push(cmp("Audiences",esc(g.audiences.join(", ")),"","dropped"));
+    blocks.push(cmpBlock("Ad set → Ad group",g.name,rows));
+    C.ads.forEach((ad,ai)=>{ if(ad.adset!==g.id||!ad.on) return;
+      const kept=ad.images.filter(i=>i.on);
+      blocks.push(cmpBlock("Ad",ad.name,[
+        cmp("Format",`${ad.images.length===1?"Single image":"Carousel"} ${minithumbs(ad.images)}`,`${fixed("Carousel")} ${minithumbs(kept)}`,ad.images.length===1?"changed":"same"),
+        cmp("Text",`<span class="clamp">${esc(ad.srcText)}</span>`,`<textarea id="s-text-${ai}" data-act="ad" data-i="${ai}" data-k="caption" maxlength="${CAPTION_MAX}" rows="2">${esc(ad.caption)}</textarea>`,ad.srcText.length>CAPTION_MAX?"changed":"same"),
+        cmp("Headline",esc(ad.headline),"","dropped"),
+        cmp("Button",ad.srcCta.replace("_"," ").toLowerCase(),selectBox(`s-cta-${ai}`,"ad",`data-i="${ai}" data-k="cta"`,TT_CTAS.map(v=>[v,v.replace("_"," ").toLowerCase()]),ad.cta),ad.cta===ad.srcCta?"same":"input"),
+        cmp("Link",`<span class="mono url">${esc(ad.srcUrl)}</span>`,`<input type="text" class="mono" id="s-url-${ai}" data-act="ad" data-i="${ai}" data-k="url" value="${esc(ad.url)}">${unknownMacros(ad.url).length?`<div class="pill warn" style="margin-top:4px">${unknownMacros(ad.url).join(" ")} has no TikTok equivalent</div>`:""}`,"changed")]));
+    });
+  });
+  return `<div class="cmp-legend mono muted"><span><span class="mk">→</span> same</span><span><span class="mk ch">→</span> changed</span><span><span class="mk dr">✕</span> not carried over</span><span><span class="mk in">→</span> you changed this</span></div>
+  <div class="cmp-wrap"><table class="cmp">
+    <thead><tr><th class="cmp-th"><span><span class="cmp-l">Source</span><b>Facebook (Meta)</b></span></th><th></th>
+      <th class="cmp-th"><span><span class="cmp-l">Destination</span><b>TikTok</b></span></th></tr></thead>
+    ${blocks.join("")}</table></div>`;
+}
+
+/* ---------- LAYOUT A: step-by-step wizard ---------- */
+const PHASES=[["On Facebook",[0,1,2,3]],["On TikTok",[4,5,6]],["Import",[7,8,9,10]]];
+const SUBTITLE=[
+  "Sign in with Facebook so the importer can read your campaigns.",
+  "Choose the ad account that holds the campaign.",
+  "Choose the campaign to import. This version supports Traffic campaigns.",
+  "Pick exactly which ad sets and ads to bring over.",
+  "Sign in to TikTok for Business.",
+  "Choose the TikTok ad account the campaign will be created in.",
+  "Choose the TikTok account your ads will run under.",
+  "Compare what is on Facebook with what will be created on TikTok. Change anything on the right.",
+  "Choose the images for each ad and the music for the carousels.",
+  "Check everything before the campaign is created.",
+  ""];
+function canNext(i){
+  return [S.metaConnected,!!S.metaAccount,!!S.campaign,!!S.cfg&&S.cfg.ads.some(a=>adOn(a)),S.ttConnected,!!S.advertiser,
+    !!S.identity,true,!!S.music,false][i];
+}
+function render(){
+  const i=S.step, body=[secConnectMeta,secMetaAccount,secCampaign,secSelect,secConnectTT,secAdvertiser,secTTAccount,cfgSideBySide,secImages,secReview,secResult][i]();
+  const phaseOf=k=>PHASES.find(p=>p[1].includes(k))[0];
+  document.getElementById("app").innerHTML=`<header class="appbar gutter"><div class="appbar-in">
+      <div class="name"><span class="dot" aria-hidden="true"></span><h1 style="font-size:17px">Campaign Importer</h1><span class="sub">Facebook → TikTok · Traffic</span></div>
+      <span class="chip">Reference UI · sample data</span></div></header>
+    <div class="page gutter"><div class="shell">
+    <nav class="steps" aria-label="Import steps">
+      ${PHASES.map(([name,ks])=>`<div class="phase"><span class="lbl">${name}</span><ol>${ks.map(k=>`<li class="${k===i?"cur":k<i?"done":""}" ${k===i?'aria-current="step"':""}><span class="n">${k<i?"✓":k+1}</span>${STEPS[k]}</li>`).join("")}</ol></div>`).join("")}
+      <button data-act="restart" style="margin-top:4px">Start over</button>
+    </nav>
+    <main>
+      <div class="progress" aria-hidden="true"><span style="width:${Math.round((i+1)/STEPS.length*100)}%"></span></div>
+      <div class="card">
+        <div class="card-head"><span class="meta">Step ${i+1} of ${STEPS.length} · ${phaseOf(i)}</span><h2>${STEPS[i]}</h2>${SUBTITLE[i]?`<p>${SUBTITLE[i]}</p>`:""}</div>
+        ${body}
+        ${i<9?`<div class="wfoot"><button data-act="back" ${i===0?"disabled":""}>Back</button><button class="primary" data-act="next" ${canNext(i)?"":"disabled"}>Continue</button></div>`
+          :i===9?`<div class="wfoot"><button data-act="back">Back</button><span></span></div>`:""}
+      </div>
+    </main></div></div>`;
+  if(S.importing){const b=document.querySelector('[data-act=confirm]'); if(b){b.disabled=true;b.innerHTML='<span class="spin"></span>Importing…'}}
+}
+/* ---------- EVENTS ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-act]"); if(!t) return;
+  const a=t.dataset.act;
+  if(t.tagName==="SELECT"||t.type==="text"||t.type==="number"||t.type==="date"||t.tagName==="TEXTAREA") return;
+  if(t.type==="radio"||t.type==="checkbox") return; /* handled on change */
+  if(a==="ms"){e.preventDefault(); const id=t.dataset.ms; S.openMs=S.openMs===id?null:id; render(); return;}
+  e.preventDefault();
+  ({connectMeta:()=>S.metaConnected=true, disconnectMeta:()=>{S.metaConnected=false;S.metaAccount=null;S.campaign=null;S.cfg=null},
+    connectTT:()=>S.ttConnected=true, disconnectTT:()=>{S.ttConnected=false;S.advertiser=null;S.identity=null;S.music=null},
+    next:()=>{S.step++;S.openMs=null;window.scrollTo(0,0)}, back:()=>{S.step--;S.openMs=null},
+    confirm:()=>{S.importing=true; setTimeout(()=>{S.importing=false;S.created=true;S.step=10;render()},1200)},
+    restart:()=>{S=fresh()},
+    selAll:()=>{S.cfg.adgroups.forEach(g=>g.on=true);S.cfg.ads.forEach(a=>a.on=true)},
+    selNone:()=>{S.cfg.adgroups.forEach(g=>g.on=false);S.cfg.ads.forEach(a=>a.on=false)}}[a]||(()=>{}))();
+  render();
+});
+document.addEventListener("change",e=>{
+  const t=e.target, a=t.dataset.act; if(!a) return;
+  if(a==="metaAccount"){S.metaAccount=t.value||null;S.campaign=null;S.cfg=null}
+  else if(a==="campaign"){S.campaign=t.value||null; if(S.campaign) initCfg(); else S.cfg=null}
+  else if(a==="advertiser"){S.advertiser=t.value||null;S.identity=null;S.music=null}
+  else if(a==="identity"){S.identity=t.value||null}
+  else if(a==="music"){S.music=t.value||null}
+  else if(a==="outcome"){S.outcome=t.value}
+  else if(a==="cfg"){S.cfg[t.dataset.k]=t.value; if(t.dataset.k==="start"&&S.cfg.end&&S.cfg.end<=t.value) S.cfg.end=""}
+  else if(a==="noEnd"){S.cfg.noEnd=t.checked; if(t.checked) S.cfg.end=""}
+  else if(a==="agMulti"){const g=S.cfg.adgroups[+t.dataset.i], k=t.dataset.k; S.openMs=t.dataset.ms;
+    g[k]=t.checked?[...g[k],t.value]:g[k].filter(v=>v!==t.value);
+    if(k==="ages") g.ages=AGE_BUCKETS.map(b=>b[0]).filter(v=>g.ages.includes(v))}
+  else if(a==="ag"){S.cfg.adgroups[+t.dataset.i][t.dataset.k]=t.dataset.k==="langs"?t.value.split(",").map(x=>x.trim()).filter(Boolean):t.value}
+  else if(a==="selAg"){const g=S.cfg.adgroups[+t.dataset.i]; g.on=t.checked; S.cfg.ads.forEach(ad=>{if(ad.adset===g.id) ad.on=t.checked})}
+  else if(a==="selAd"){const ad=S.cfg.ads.find(x=>x.id===t.dataset.ad); ad.on=t.checked; const g=S.cfg.adgroups.find(x=>x.id===ad.adset);
+    if(t.checked) g.on=true; else if(!S.cfg.ads.some(x=>x.adset===g.id&&x.on)) g.on=false}
+  else if(a==="ad"){S.cfg.ads[+t.dataset.i][t.dataset.k]=t.value}
+  else if(a==="img"){const ad=S.cfg.ads.find(x=>x.id===t.dataset.ad); ad.images.find(i=>i.id===t.dataset.img).on=t.checked}
+  render();
+});
+S=fresh();
+render();
+</script>
